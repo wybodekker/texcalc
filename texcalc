@@ -1,0 +1,125 @@
+#!/bin/bash
+
+Myname="${0##*/}"
+Version=1.02
+
+:<<'DOC'
+= texcalc - converts from one tex unit to another
+
+= Synopsis
+texcalc [options] [n.m]unit1 [unit2]	
+
+texcalc 30bp pt		# → 30.11250pt
+texcalc 30bp bp		# → 30.00000bp
+texcalc 30bp mm		# → 10.58333mm
+texcalc 10mm bp		# → 28.34645bp
+texcalc 10mm cc		# → 2.21592cc
+texcalc cc mm		# → 4.51278mm
+
+== Options
+-h,--help	print this help and exit
+-H,--Help	print full documentation via less and exit
+-V,--version	print version and exit
+-s,--scale	number of decimal places in the output
+
+= Description
+texcalc converts [an amount of] TeX units to another TeX unit.
+The default for the last is |pt|. Known units are:
+  bp cc cm dd in mm pc pt
+
+= Examples
+These print 25.40000mm:
+
+  texcalc in mm
+  texcalc 1in mm
+  texcalc 1.0in mm
+
+The default output unit is pt, so this prints 1.00375pt:
+
+  texcalc bp
+
+= Author
+[Wybo Dekker](wybo@dekkerdocumenten.nl)
+
+= Copyright
+Released under the [GNU General Public License](www.gnu.org/copyleft/gpl.html)
+DOC
+
+REd='\e[38;5;9m' Nor='\e[0m'
+    die() { local i; for i; do echo -e "$Myname: $REd$i$Nor"; done 1>&2; exit 1; }
+helpsrt() { sed -n '/^= Synopsis/,/^= /p' "$0"|sed '1d;$d'; exit; }
+helpall() { sed -n "/^:<<'DOC'$/,/^DOC/p" "$0"|sed '1d;$d'|
+            less -P"$Myname-${Version/./·} (press h for help, q to quit)";exit; }
+
+:<<'DOC' #----------------------------------------------------------------------
+= handle_options
+synopsis:	 handle_options "$@"
+description:	handle the options.
+globals used:	 Myname Version
+globals  set:	 args
+DOC
+#-------------------------------------------------------------------------------
+handle_options() {
+   local options
+   if ! options=$(getopt \
+      -n "$Myname" \
+      -o hHVIs: \
+      -l help,Help,version,scale: -- "$@"
+   ); then exit 1; fi
+   eval set -- "$options"
+   scale=5
+   while [ $# -gt 0 ]; do
+      case $1 in
+      (-h|--help)    # print this help and exit
+		     helpsrt
+		     ;;
+      (-H|--Help)    # print full documentation via less and exit
+		     helpall
+		     ;;
+      (-V|--version) # print version and exit
+		     echo $Version
+		     exit
+		     ;;
+      (-s|--scale)   # number of decimal places in the output
+		     scale=$2
+		     shift 2;;
+      (-I)	     instscript "$0" ||
+   		        die 'the -I option is for developers only'
+   		     exit
+   		     ;;
+      (--)           shift
+		     break
+		     ;;
+      (*)	     break
+		     ;;
+      esac
+   done
+   args=( "$@" )
+}
+
+declare -A fac=(
+  [bp]=' 7227.0 / 7200.0'
+  [cc]='14856.0 / 1157.0'
+  [cm]=' 7227.0 / 254.0 '
+  [dd]=' 1238.0 / 1157.0'
+  [in]=' 7227.0 / 100.0 '
+  [mm]=' 7227.0 / 2540.0'
+  [pc]=12
+  [pt]=1
+)
+
+handle_options "$@"
+set -- "${args[@]}"
+
+[[ -z $1 ]] && helpsrt
+inunit=${1//[[:digit:].]/}
+inval=${1//[[:alpha:]]/}
+[[ -z $inval ]] && inval=1
+outunit=${2:-pt}
+[[ -z ${fac[$inunit]} ]] &&
+   die "first argument's unit ($inunit) unknown"
+[[ -z ${fac[$outunit]} ]] &&
+   die "second argument's unit ($outunit) unknown"
+[[ $inval =~ ^[[:digit:]]+\.?([[:digit:]]+)?$ ]] ||
+   die "invalid numerical value in first argument"
+echo "$(echo "scale=$scale; $inval*(${fac[$inunit]})/(${fac[$outunit]})"|bc -l)$outunit"
