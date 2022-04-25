@@ -20,7 +20,7 @@ texcalc cc mm		# → 4.51278mm
 -h,--help	print this help and exit
 -H,--Help	print full documentation via less and exit
 -V,--version	print version and exit
--s,--scale	number of decimal places in the output
+-s,--scale=X	set number of decimal places in the output to X
 
 = Description
 texcalc converts [an amount of] TeX units to another TeX unit.
@@ -80,7 +80,7 @@ handle_options() {
 		     echo $Version
 		     exit
 		     ;;
-      (-s|--scale)   # number of decimal places in the output
+      (-s|--scale)   # set number of decimal places in the output to X
 		     scale=$2
 		     shift 2;;
       (-I)	     instscript "$0" ||
