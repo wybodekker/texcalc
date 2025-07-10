@@ -40,7 +40,7 @@ The default output unit is pt, so this prints 1.00375pt:
   texcalc bp
 
 = Author
-[Wybo Dekker](wybo@dekkerdocumenten.nl)
+[Wybo Dekker](wybodekker@me.com)
 
 = Copyright
 Released under the [GNU General Public License](www.gnu.org/copyleft/gpl.html)
